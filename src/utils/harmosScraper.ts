@@ -47,7 +47,7 @@ export class HarmosScraper {
     console.log('🚀 ブラウザを初期化しています...');
     try {
       this.browser = await puppeteer.launch({
-        headless: false,
+        headless: true,  // 本番環境用にtrueに変更
         defaultViewport: null,
         args: [
           '--start-maximized',
@@ -67,12 +67,12 @@ export class HarmosScraper {
       // タイムアウトを設定
       this.page.setDefaultTimeout(60000);
       
-      // リクエストのブロックを設定
+      // リクエストのブロックを設定（本番環境用に修正）
       await this.page.setRequestInterception(true);
       this.page.on('request', (request) => {
         const resourceType = request.resourceType();
-        // 画像、フォント、メディアなどのリソースをブロックして高速化
-        if (resourceType === 'image' || resourceType === 'font' || resourceType === 'media') {
+        // 画像のみブロック（フォントとメディアは許可）
+        if (resourceType === 'image') {
           request.abort();
         } else {
           request.continue();
@@ -166,29 +166,26 @@ export class HarmosScraper {
       await this.page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
       console.log(`📍 現在のURL: ${this.page.url()}`);
       
-      // ページの読み込みが完了するまで待機
+      // ページの読み込みが完了するまで待機（動的な待機に変更）
       console.log('⏳ ページの読み込みを待機中...');
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await this.page.waitForFunction(() => {
+        return document.readyState === 'complete';
+      }, { timeout: 30000 });
       
-      // 求人一覧ページの要素を待機
+      // 求人一覧ページの要素を待機（より柔軟なセレクタを使用）
       console.log('⏳ 求人一覧の要素を待機中...');
       try {
-        // Angularのコンポーネント構造に対応するセレクタを試す
         const selectors = [
-          '.ng-star-inserted',
-          '[class*="ng-tns-c"]',
-          '[class*="ng-star-inserted"]',
+          'a[href*="/jobs/"]',
           '.job-listing',
           '.job-card',
           '.job-item',
           '.job',
           'article',
           '.list-item',
-          'a[href*="/jobs/"]',
-          'div[class*="ng-"]',
-          'div[class*="job"]',
-          'div[class*="list"]',
-          'div[class*="card"]'
+          '[class*="job"]',
+          '[class*="list"]',
+          '[class*="card"]'
         ];
         
         let foundSelector = '';
@@ -855,24 +852,14 @@ export class HarmosScraper {
       await this.page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
       console.log(`📍 現在のURL: ${this.page.url()}`);
       
-      // ページの読み込みが完了するまで待機
+      // ページの読み込みが完了するまで待機（動的な待機に変更）
       console.log('⏳ ページの読み込みを待機中...');
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      await this.page.waitForFunction(() => {
+        return document.readyState === 'complete';
+      }, { timeout: 30000 });
 
-      // デバッグ用：現在のページのHTMLを取得
-      const html = await this.page.content();
-      console.log('📄 現在のページのHTML:', html);
-
-      // app-applicationsコンポーネントを待機
-      console.log('⏳ app-applicationsコンポーネントを探しています...');
-      await this.page.waitForSelector('app-applications[class*="ng-tns-c144"]', { timeout: 10000 });
-
-      // hrm-nav-list-user-itemを待機
-      console.log('⏳ hrm-nav-list-user-itemを探しています...');
-      await this.page.waitForSelector('hrm-nav-list-user-item[class*="ng-tns-c144"]', { timeout: 10000 });
-
-      // 候補者リンクを取得
-      const candidateElements = await this.page.$$('hrm-nav-list-user-item[class*="ng-tns-c144"] a[_ngcontent-dsh-c144]');
+      // より柔軟なセレクタを使用
+      const candidateElements = await this.page.$$('a[href*="/candidates/"]');
       console.log(`📊 候補者要素数: ${candidateElements.length}件`);
 
       if (candidateElements.length === 0) {
