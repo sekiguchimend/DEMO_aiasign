@@ -1,8 +1,12 @@
-export interface JobListing {
-  title: string;
+export interface CandidateInfo {
+  name: string;
   url: string;
-  status: 'OPEN' | 'CLOSE';
+  jobCategory: string;
+  jobDescription: string;
+  requirements: string;
   lastUpdated: string;
-  companyId?: string;
-  jobId?: string;
+  companyId: string;
+  jobId: string;
+  candidateId: string;
+  candidateDetailId: string;
 } 
