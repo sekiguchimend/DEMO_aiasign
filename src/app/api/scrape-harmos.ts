@@ -19,7 +19,9 @@ export default async function handler(
   try {
     const scraper = new HarmosScraper();
     await scraper.initialize();
-    await scraper.login(username, password);
+    process.env.HRMOS_EMAIL = username;
+    process.env.HRMOS_PASSWORD = password;
+    await scraper.login();
     
     const jobListings = await scraper.scrapeJobListings();
     
