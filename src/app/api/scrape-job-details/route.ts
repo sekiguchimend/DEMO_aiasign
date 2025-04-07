@@ -4,7 +4,7 @@ import path from 'path';
 
 export async function POST() {
   try {
-    console.log('候補者情報のスクレイピングを開始します...');
+    console.log('求人詳細のスクレイピングを開始します...');
     
     // 環境変数の確認
     const email = process.env.HRMOS_EMAIL;
@@ -30,25 +30,29 @@ export async function POST() {
       console.log('ログインを実行しています...');
       await scraper.login();
       
-      // 候補者情報をスクレイピング
-      console.log('候補者情報をスクレイピングしています...');
-      const candidateInfos = await scraper.scrapeAllCandidateInfo();
+      // 全ての求人詳細をスクレイピング
+      console.log('全ての求人詳細をスクレイピングしています...');
+      const jobDetails = await scraper.scrapeAllJobDetails();
+      
+      if (jobDetails.length === 0) {
+        throw new Error('求人詳細の取得に失敗しました');
+      }
       
       // CSVファイルに出力
       console.log('CSVファイルに出力しています...');
-      const outputPath = path.join(process.cwd(), 'public', 'candidate-info.csv');
-      await scraper.exportCandidateInfoToCSV(candidateInfos, outputPath);
+      const outputPath = path.join(process.cwd(), 'public', 'job-details.csv');
+      await scraper.exportJobDetailsToCSV(jobDetails, outputPath);
       
       // スクレイパーを閉じる
       console.log('ブラウザを閉じています...');
       await scraper.close();
       
-      console.log('候補者情報のスクレイピングが完了しました');
+      console.log('求人詳細のスクレイピングが完了しました');
       
       return NextResponse.json({
         success: true,
-        message: '候補者情報のスクレイピングが完了しました',
-        data: candidateInfos
+        message: `${jobDetails.length}件の求人詳細のスクレイピングが完了しました`,
+        data: jobDetails
       });
     } catch (scraperError) {
       console.error('スクレイパー処理中にエラーが発生しました:', scraperError);
@@ -68,11 +72,11 @@ export async function POST() {
       }, { status: 500 });
     }
   } catch (error) {
-    console.error('候補者情報のスクレイピング中にエラーが発生しました:', error);
+    console.error('求人詳細のスクレイピング中にエラーが発生しました:', error);
     
     return NextResponse.json({
       success: false,
-      message: '候補者情報のスクレイピング中にエラーが発生しました',
+      message: '求人詳細のスクレイピング中にエラーが発生しました',
       error: error instanceof Error ? error.message : '不明なエラー',
       stack: error instanceof Error ? error.stack : undefined
     }, { status: 500 });
